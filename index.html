@@ -1,0 +1,1694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Friendship Zone (Firebase)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(to bottom right, #e0e7ff, #f0f4ff);
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .page-section { display: none; animation: fadeIn 0.5s ease-out; }
+        .page-section.active { display: block; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        #friend-search {
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%239CA3AF'%3e%3cpath fill-rule='evenodd' d='M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z' clip-rule='evenodd' /%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: 1rem 50%;
+            background-size: 1.25rem 1.25rem;
+            padding-left: 3rem;
+        }
+        .logged-in-nav .logged-out-link,
+        .logged-out-nav .logged-in-link { display: none; }
+        .logged-out-nav .logged-out-link,
+        .logged-in-nav .logged-in-link { display: inline-flex; }
+        .logged-in-nav #mobile-menu .logged-out-link,
+        .logged-out-nav #mobile-menu .logged-in-link { display: none; }
+        .logged-out-nav #mobile-menu .logged-out-link,
+        .logged-in-nav #mobile-menu .logged-in-link { display: flex; }
+        .admin-link { display: none; }
+        .admin-nav .admin-link { display: inline-flex; }
+        .admin-nav #mobile-menu .admin-link { display: flex; }
+
+        /* NEW: Styling for the tip box entrance */
+        #ai-tip-box {
+            transition: all 0.4s ease-out;
+            opacity: 0;
+            transform: translateY(10px);
+            /* Hide by default, 'show' class will make it visible */
+            visibility: hidden; 
+            max-height: 0;
+            overflow: hidden;
+            margin-top: 0;
+        }
+        #ai-tip-box.show {
+            opacity: 1;
+            transform: translateY(0);
+            visibility: visible;
+            max-height: 200px; /* Allow space for content */
+            margin-top: 2rem; /* Add margin back */
+        }
+    </style>
+</head>
+<body class="antialiased logged-out-nav">
+
+    <!-- Navigation Bar -->
+    <nav class="bg-white shadow-md sticky top-0 z-40">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex-shrink-0 flex items-center">
+                    <svg class="h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0118 15v3h-2zM4 18v-3a5.972 5.972 0 01.75-2.906A3.005 3.005 0 002 15v3h2z" />
+                    </svg>
+                    <span class="text-2xl font-bold text-indigo-600 ml-2">Friendship Zone</span>
+                </div>
+                <!-- Desktop Links -->
+                <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                    <a href="#home" class="nav-link text-gray-900 hover:text-indigo-600 inline-flex items-center px-1 pt-1 border-b-2 border-indigo-500 text-sm font-medium">
+                        <svg class="h-5 w-5 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg>
+                        Home
+                    </a>
+                    <a href="#friends" class="nav-link logged-in-link text-gray-500 hover:text-indigo-600 inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium">
+                        <svg class="h-5 w-5 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0118 15v3h-2zM4 18v-3a5.972 5.972 0 01.75-2.906A3.005 3.005 0 002 15v3h2z" /></svg>
+                        My Friends
+                    </a>
+                    <a href="#profile" class="nav-link logged-in-link text-gray-500 hover:text-indigo-600 inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium">
+                        <svg class="h-5 w-5 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd" /></svg>
+                        Profile
+                    </a>
+                    <a href="#admin" class="nav-link admin-link text-gray-500 hover:text-indigo-600 inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium">
+                        <svg class="h-5 w-5 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 3a3 3 0 013-3h2a3 3 0 013 3v2a3 3 0 01-3 3H9a3 3 0 01-3-3V3zM6 9a3 3 0 013-3h2a3 3 0 013 3v2a3 3 0 01-3 3H9a3 3 0 01-3-3V9zM6 15a3 3 0 013-3h2a3 3 0 013 3v2a3 3 0 01-3 3H9a3 3 0 01-3-3v-2z" clip-rule="evenodd" /></svg>
+                        Admin
+                    </a>
+                    <a href="#login" class="nav-link logged-out-link text-gray-500 hover:text-indigo-600 inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium">
+                        <svg class="h-5 w-5 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-10.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L9.414 11H13a1 1 0 100-2H9.414l1.293-1.293z" clip-rule="evenodd" /></svg>
+                        Login
+                    </a>
+                    <a href="#register" class="nav-link logged-out-link text-gray-500 hover:text-indigo-600 inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium">
+                        <svg class="h-5 w-5 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 11a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1v-1z" /></svg>
+                        Register
+                    </a>
+                     <a href="#" id="logout-link" class="nav-link logged-in-link text-gray-500 hover:text-indigo-600 inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium">
+                        <svg class="h-5 w-5 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd" /></svg>
+                        Logout
+                    </a>
+                </div>
+                <!-- Mobile Menu Button -->
+                <div class="sm:hidden flex items-center">
+                    <button id="mobile-menu-button" class="bg-white p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <span class="sr-only">Open main menu</span>
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="sm:hidden hidden">
+            <div class="pt-2 pb-3 space-y-1">
+                 <a href="#home" class="nav-link-mobile text-gray-900 flex items-center pl-3 pr-4 py-2 border-l-4 border-indigo-500 text-base font-medium">
+                    <svg class="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg>
+                    Home
+                </a>
+                 <a href="#friends" class="nav-link-mobile logged-in-link text-gray-500 hover:bg-gray-50 hover:border-indigo-500 hover:text-gray-700 flex items-center pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium">
+                    <svg class="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0118 15v3h-2zM4 18v-3a5.972 5.972 0 01.75-2.906A3.005 3.005 0 002 15v3h2z" /></svg>
+                    My Friends
+                </a>
+                 <a href="#profile" class="nav-link-mobile logged-in-link text-gray-500 hover:bg-gray-50 hover:border-indigo-500 hover:text-gray-700 flex items-center pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium">
+                    <svg class="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd" /></svg>
+                    Profile
+                </a>
+                 <a href="#admin" class="nav-link-mobile admin-link text-gray-500 hover:bg-gray-50 hover:border-indigo-500 hover:text-gray-700 flex items-center pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium">
+                    <svg class="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 3a3 3 0 013-3h2a3 3 0 013 3v2a3 3 0 01-3 3H9a3 3 0 01-3-3V3zM6 9a3 3 0 013-3h2a3 3 0 013 3v2a3 3 0 01-3 3H9a3 3 0 01-3-3V9zM6 15a3 3 0 013-3h2a3 3 0 013 3v2a3 3 0 01-3 3H9a3 3 0 01-3-3v-2z" clip-rule="evenodd" /></svg>
+                    Admin
+                </a>
+                 <a href="#login" class="nav-link-mobile logged-out-link text-gray-500 hover:bg-gray-50 hover:border-indigo-500 hover:text-gray-700 flex items-center pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium">
+                    <svg class="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-10.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L9.414 11H13a1 1 0 100-2H9.414l1.293-1.293z" clip-rule="evenodd" /></svg>
+                    Login
+                </a>
+                 <a href="#register" class="nav-link-mobile logged-out-link text-gray-500 hover:bg-gray-50 hover:border-indigo-500 hover:text-gray-700 flex items-center pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium">
+                    <svg class="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 11a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1v-1z" /></svg>
+                    Register
+                </a>
+                 <a href="#" id="logout-link-mobile" class="nav-link-mobile logged-in-link text-gray-500 hover:bg-gray-50 hover:border-indigo-500 hover:text-gray-700 flex items-center pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium">
+                    <svg class="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd" /></svg>
+                    Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Page Content -->
+    <div class="py-10">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+
+            <!-- Home Page -->
+            <section id="page-home" class="page-section active">
+                <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+                    <div class="p-8 sm:p-12">
+                        <h1 class="text-3xl font-bold text-gray-900 mb-4">Welcome to Friendship Zone!</h1>
+                        <p id="home-welcome-message" class="text-lg text-gray-600 mb-6">
+                            This is your new capstone project, built as a professional single-page application. Login or Register to connect with your friends!
+                        </p>
+                        <div class="flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0">
+                            <a href="#friends" class="nav-link logged-in-link inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 text-center">
+                                View My Friends
+                            </a>
+                            <a href="#login" class="nav-link logged-out-link inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 text-center">
+                                Login
+                            </a>
+                             <button id="get-tip-btn" class="inline-block bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300">
+                                ✨ Get a Friendship Tip
+                            </button>
+                        </div>
+                        
+                        <!-- MODIFIED: AI Tip Box -->
+                        <div id="ai-tip-box" class="p-5 bg-purple-100 border border-purple-200 rounded-lg shadow-sm">
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0">
+                                    <!-- NEW: Icon -->
+                                    <svg class="h-6 w-6 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-7.5 0m7.5 0a12.06 12.06 0 0 0-7.5 0m7.5 0a6.01 6.01 0 0 0-1.5-.189m1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-7.5 0m7.5 0a12.06 12.06 0 0 0-7.5 0m7.5 0a6.01 6.01 0 0 0-1.5-.189m1.5.189a6.01 6.01 0 0 1-1.5-.189m0 0A23.978 23.978 0 0 1 6 15.75m0 0v-5.25m0 5.25a23.978 23.978 0 0 0 6 2.25m-6-2.25a23.978 23.978 0 0 1 6-2.25m0 0A23.978 23.978 0 0 0 6 15.75m0 0v-5.25m0 5.25a23.978 23.978 0 0 0 6 2.25m-6-2.25a23.978 23.978 0 0 1 6-2.25m0 0A23.978 23.978 0 0 0 6 15.75m0 0V4.5m0 11.25a23.978 23.978 0 0 0 6 2.25M12 21a8.25 8.25 0 0 0 6-2.25M12 21a8.25 8.25 0 0 1-6-2.25M12 21V3m0 18a8.25 8.25 0 0 0 6-2.25M12 3a8.25 8.25 0 0 0-6 2.25M12 3v18a8.25 8.25 0 0 0 6-2.25M12 3a8.25 8.25 0 0 0-6 2.25" />
+                                    </svg>
+                                </div>
+                                <div class="ml-3 w-0 flex-1">
+                                    <h4 class="font-bold text-purple-900">Friendship Tip:</h4>
+                                    <!-- NEW: Added min-height for loading state -->
+                                    <p id="ai-tip-content" class="text-purple-700 mt-1 min-h-[1.5em]"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Friends Page -->
+             <section id="page-friends" class="page-section">
+                <div class="max-w-3xl mx-auto space-y-8">
+                    
+                    <!-- Find Friends -->
+                    <div class="bg-white shadow-lg rounded-lg p-6">
+                        <h2 class="text-2xl font-bold text-gray-900 mb-4">Find New Friends</h2>
+                        <p class="text-sm text-gray-600 mb-4">Search for other registered users by their email address.</p>
+                        <form id="find-friend-form" class="flex flex-col sm:flex-row gap-4">
+                            <div class="flex-grow">
+                                <label for="find-email" class="sr-only">User's Email</label>
+                                <input type="email" id="find-email" placeholder="Enter a user's email..." required class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                            </div>
+                            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
+                                Send Friend Request
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Friend Requests -->
+                    <div class="bg-white shadow-lg rounded-lg p-6">
+                        <h2 class="text-2xl font-bold text-gray-900 mb-4">Friend Requests</h2>
+                        <div id="friend-requests-container" class="space-y-4">
+                            <!-- Dynamic content for friend requests -->
+                        </div>
+                    </div>
+
+                    <!-- My Friends -->
+                    <div class="bg-white shadow-lg rounded-lg p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-2xl font-bold text-gray-900">My Friends</h2>
+                            <input type="search" id="friend-search" placeholder="Search friends..." class="block w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        <div id="friend-list-container" class="space-y-4 mb-6">
+                            <!-- Dynamic content for friend list -->
+                        </div>
+                    </div>
+                    
+                </div>
+            </section>
+
+            <!-- Login Page -->
+            <section id="page-login" class="page-section">
+                <div class="max-w-xl mx-auto bg-white shadow-lg rounded-lg p-8">
+                    <div class="flex flex-col items-center mb-6">
+                        <svg class="h-12 w-12 text-indigo-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0118 15v3h-2zM4 18v-3a5.972 5.972 0 01.75-2.906A3.005 3.005 0 002 15v3h2z" />
+                        </svg>
+                        <span class="text-3xl font-bold text-indigo-600 ml-2">Friendship Zone</span>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center sr-only">Login to Your Account</h2>
+                    <form id="login-form" class="space-y-4">
+                        <div>
+                            <label for="login-email" class="block text-sm font-medium text-gray-700">Email Address</label>
+                            <input type="email" id="login-email" name="login-email" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label for="login-password" class="block text-sm font-medium text-gray-700">Password</label>
+                            <input type="password" id="login-password" name="login-password" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-300">
+                            Login
+                        </button>
+                    </form>
+                    <p class="text-center text-gray-600 text-sm mt-6">
+                        Don't have an account? 
+                        <a href="#register" class="nav-link font-medium text-indigo-600 hover:text-indigo-500">
+                            Sign up here
+                        </a>
+                    </p>
+                </div>
+            </section>
+
+            <!-- Register Page -->
+            <section id="page-register" class="page-section">
+                <div class="max-w-xl mx-auto bg-white shadow-lg rounded-lg p-8">
+                     <div class="flex flex-col items-center mb-6">
+                        <svg class="h-12 w-12 text-indigo-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0118 15v3h-2zM4 18v-3a5.972 5.972 0 01.75-2.906A3.005 3.005 0 002 15v3h2z" />
+                        </svg>
+                        <span class="text-3xl font-bold text-indigo-600 ml-2">Friendship Zone</span>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center sr-only">Create Your Account</h2>
+                    <form id="registration-form" class="space-y-4">
+                        <div>
+                            <label for="reg-name" class="block text-sm font-medium text-gray-700">Full Name</label>
+                            <input type="text" id="reg-name" name="reg-name" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label for="reg-email" class="block text-sm font-medium text-gray-700">Email Address</label>
+                            <input type="email" id="reg-email" name="reg-email" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label for="reg-password" class="block text-sm font-medium text-gray-700">Password</label>
+                            <input type="password" id="reg-password" name="reg-password" required minlength="8" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label for="reg-password-confirm" class="block text-sm font-medium text-gray-700">Confirm Password</label>
+                            <input type="password" id="reg-password-confirm" name="reg-password-confirm" required minlength="8" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-300">
+                            Register
+                        </button>
+                    </form>
+                    <p class="text-center text-gray-600 text-sm mt-6">
+                        Already have an account? 
+                        <a href="#login" class="nav-link font-medium text-indigo-600 hover:text-indigo-500">
+                            Login here
+                        </a>
+                    </p>
+                </div>
+            </section>
+
+            <!-- Profile Page -->
+            <section id="page-profile" class="page-section">
+                <div class="max-w-xl mx-auto bg-white shadow-lg rounded-lg p-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">Your Profile</h2>
+                    
+                    <!-- Profile Picture -->
+                    <div class="flex flex-col items-center mb-6">
+                        <img id="profile-image-display" src="https://placehold.co/128x128/E0E7FF/4338CA?text=P" alt="Profile Picture" class="w-32 h-32 rounded-full object-cover mb-4 border-4 border-indigo-100 shadow-sm">
+                        
+                        <form id="profile-image-form" class="w-full">
+                            <label for="profile-image-input" class="block text-sm font-medium text-gray-700">Update your photo</label>
+                            <input type="file" id="profile-image-input" name="profile-image-input" accept="image/*" class="mt-1 block w-full text-sm text-gray-500
+                                file:mr-4 file:py-2 file:px-4
+                                file:rounded-full file:border-0
+                                file:text-sm file:font-semibold
+                                file:bg-indigo-50 file:text-indigo-700
+                                hover:file:bg-indigo-100
+                            ">
+                            <p class="text-xs text-gray-500 mt-1">Images under 1MB recommended.</p>
+                            <button type="submit" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
+                                Save Picture
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Profile Details -->
+                    <div class="space-y-4 border-t pt-6">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Full Name</p>
+                            <p id="profile-name" class="text-lg text-gray-900"></p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Email Address</p>
+                            <p id="profile-email" class="text-lg text-gray-900"></p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Your User ID (for sharing)</p>
+                            <p id="profile-uid" class="text-lg text-gray-900 bg-gray-100 p-2 rounded font-mono text-sm break-all"></p>
+                        </div>
+                        <button id="logout-button-profile" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-300">
+                            Logout
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Admin Page -->
+            <section id="page-admin" class="page-section">
+                <div class="max-w-3xl mx-auto bg-white shadow-lg rounded-lg p-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">Admin Dashboard</h2>
+                    <h3 class="text-lg font-medium text-gray-800 mb-4">All Registered Users</h3>
+                    <div id="admin-user-list-container" class="space-y-4">
+                        <!-- Dynamic content for admin user list -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Confirmation Page -->
+            <section id="page-confirmation" class="page-section">
+                <div class="max-w-xl mx-auto bg-white shadow-lg rounded-lg p-8 text-center">
+                    <svg class="w-16 h-16 mx-auto text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <h2 class="text-3xl font-bold text-gray-900 mt-4 mb-2">Success!</h2>
+                    <p id="confirmation-message" class="text-lg text-gray-600 mb-6">
+                        Your action was successful!
+                    </p>
+                    <a href="#home" class="nav-link inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300">
+                        Go to Home
+                    </a>
+                </div>
+            </section>
+
+            <!-- Error Modal -->
+            <div id="error-modal" class="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
+                <div class="bg-white rounded-lg shadow-xl max-w-sm w-full p-6 text-center">
+                    <svg class="w-12 h-12 mx-auto text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <h3 class="text-xl font-medium text-gray-900 mt-4">Error</h3>
+                    <p id="error-message" class="text-gray-600 mt-2">An error occurred.</p>
+                    <button id="close-error-modal" class="mt-6 w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
+                        Close
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Confirmation Modal -->
+            <div id="confirm-modal" class="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
+                <div class="bg-white rounded-lg shadow-xl max-w-sm w-full p-6 text-center">
+                    <svg class="w-12 h-12 mx-auto text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <h3 class="text-xl font-medium text-gray-900 mt-4">Are you sure?</h3>
+                    <p id="confirm-message" class="text-gray-600 mt-2">Do you want to proceed?</p>
+                    <div class="flex justify-center space-x-4 mt-6">
+                        <button id="confirm-btn-no" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
+                            No, Cancel
+                        </button>
+                        <button id="confirm-btn-yes" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
+                            Yes, Proceed
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gemini AI Modal -->
+            <div id="gemini-modal" class="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
+                <div class="bg-white rounded-lg shadow-xl max-w-lg w-full p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 id="gemini-modal-title" class="text-xl font-medium text-gray-900">AI Generated Content</h3>
+                        <button id="close-gemini-modal" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+                    <div id="gemini-modal-content-wrapper">
+                        <div id="gemini-loading" class="flex flex-col items-center justify-center min-h-[150px]">
+                            <svg class="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <p class="text-gray-600 mt-4">Generating response...</p>
+                        </div>
+                        <div id="gemini-modal-content" class="hidden">
+                            <p id="gemini-text-output" class="text-gray-700 whitespace-pre-wrap bg-gray-50 p-4 rounded-md border border-gray-200"></p>
+                        </div>
+                    </div>
+                    <div class="flex justify-end mt-6 space-x-3">
+                         <button id="copy-gemini-text" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg shadow-sm transition duration-300">
+                            Copy Text
+                        </button>
+                        <button id="close-gemini-modal-bottom" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+             <!-- Toast Notification Container -->
+             <div id="toast-container" class="fixed bottom-0 right-0 p-6 z-50 w-full max-w-sm">
+                <!-- Toasts will be dynamically injected here -->
+             </div>
+
+        </div>
+    </div>
+
+    <!-- Firebase SDK Imports -->
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { 
+            getAuth, 
+            signInAnonymously, 
+            signInWithCustomToken, 
+            onAuthStateChanged,
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword,
+            signOut
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore, 
+            doc, 
+            getDoc, 
+            setDoc, 
+            updateDoc,
+            onSnapshot, 
+            collection, 
+            query, 
+            where, 
+            getDocs,
+            arrayUnion,
+            arrayRemove,
+            setLogLevel
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- Firebase Config and App Initialization ---
+
+        // =======================================================================
+        // PASTE YOUR FIREBASE CONFIG OBJECT HERE
+        //
+        // 1. Delete the line below that says "const firebaseConfig = {}"
+        // 2. Paste your *entire* `const firebaseConfig = { ... };` object here.
+        // =======================================================================
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyAvqXJ0J5ZNuoNLLr0KzSzc6k_dx8iIooE",
+  authDomain: "friendship-zone-7ee09.firebaseapp.com",
+  projectId: "friendship-zone-7ee09",
+  storageBucket: "friendship-zone-7ee09.firebasestorage.app",
+  messagingSenderId: "393708282117",
+  appId: "1:393708282117:web:05692da3851ba77bb7976c",
+  measurementId: "G-LDD4ZDL44P"
+};
+
+        // Initialize Firebase
+        let app;
+        let db;
+        let auth;
+        
+
+
+        // --- App Global State ---
+        // These are placeholders for the environment variables.
+        // For local testing, they aren't strictly needed, but we define them
+        // to match the app's structure.
+        
+        // We get the appId from the config *after* it's pasted
+        const appId = firebaseConfig.appId || 'default-app-id';
+        const __initial_auth_token = undefined; // We will sign in with email/pass
+
+        const adminEmail = "admin@friendship.zone"; // Hardcoded admin email
+        
+        // Firestore paths
+        const usersCollectionPath = `/artifacts/${appId}/public/data/users`;
+
+        // App state variables
+        let currentAuthUser = null; // From Firebase Auth
+        let currentDbUser = null;   // From Firestore
+        let currentUserId = null;   // UID from Firebase Auth
+        let currentUserUnsubscribe = null; // To detach Firestore listener on logout
+
+        // --- Gemini API Key ---
+        // =======================================================================
+        // PASTE YOUR GEMINI API KEY HERE
+        //
+        // 1. Get your key from Google AI Studio.
+        // 2. Paste it between the quotes below.
+        // =======================================================================
+        const apiKey = "AIzaSyAzPJbAPLdHpvqDqMB6400KOz4i-Ftn3dQ"; 
+
+        // --- Wait for DOM to be ready ---
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // NEW: Initialize Firebase *after* the DOM is loaded
+            try {
+                // Check if config is still the placeholder
+                if (!firebaseConfig.projectId) {
+                    throw new Error('"projectId" is not set. Did you paste your firebaseConfig from the console?');
+                }
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                // Enable Firestore debug logging
+                setLogLevel('Debug');
+            } catch (error) {
+                console.error("Firebase initialization failed:", error);
+                // NOW this will work, because the DOM is loaded.
+                showError("Firebase config is missing or invalid. Please paste your config from the Firebase console into the HTML file. Error: " + error.message);
+                return; // Stop all further execution
+            }
+
+            
+
+            // --- Helper function to read image as Base64 ---
+            function readImageAsBase64(file) {
+                 return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = error => reject(error);
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            // --- USER & AUTH FUNCTIONS (REFACTORED FOR FIREBASE) ---
+
+            /**
+             * Handles Firebase Auth state changes. This is the central function
+             * that manages user login/logout state transitions.
+             */
+            onAuthStateChanged(auth, async (user) => {
+                // Stop any previous real-time listener
+                if (currentUserUnsubscribe) {
+                    currentUserUnsubscribe();
+                    currentUserUnsubscribe = null;
+                }
+
+                if (user) {
+                    // --- User is logged in ---
+                    currentAuthUser = user;
+                    currentUserId = user.uid;
+
+                    // If user is anonymous, don't set up listeners (they are not "real" users)
+                    if (user.isAnonymous) {
+                        console.log("Anonymous user signed in, but app requires email user.");
+                        updateNav(); // Update to show "Login"
+                        navigateTo(window.location.hash || '#home');
+                        return;
+                    }
+
+                    const userDocRef = doc(db, usersCollectionPath, user.uid);
+
+                    // Start a new real-time listener for the user's data
+                    currentUserUnsubscribe = onSnapshot(userDocRef, (docSnap) => {
+                        if (docSnap.exists()) {
+                            currentDbUser = docSnap.data();
+                            
+                            // Update UI elements that depend on user data
+                            updateNav();
+                            
+                            // Refresh page content if the user is currently on a dynamic page
+                            const activePageId = document.querySelector('.page-section.active')?.id;
+                            if (activePageId === 'page-profile') {
+                                displayProfile();
+                            } else if (activePageId === 'page-friends') {
+                                // This will re-render the friends/requests lists
+                                displayFriendsPageContent(); 
+                            }
+                            
+                        } else {
+                            // This can happen if auth user exists but firestore doc was deleted
+                            console.error("User document not found in Firestore!");
+                            showError("Your user data could not be found. Logging out.");
+                            logout();
+                        }
+                    }, (error) => {
+                        console.error("Error with user snapshot: ", error);
+                        showError("Lost connection to user data. Please refresh.");
+                    });
+                    
+                    // Initial navigation after login confirmation
+                    updateNav(); // Update nav immediately
+                    navigateTo(window.location.hash || '#home');
+
+                } else {
+                    // --- User is logged out ---
+                    currentAuthUser = null;
+                    currentDbUser = null;
+                    currentUserId = null;
+                    
+                    updateNav(); // Update nav to logged-out state
+                    navigateTo('#home'); // Force navigation to home page
+                    
+                    // Sign in anonymously for basic app access (if needed)
+                    // Or just let the user be "logged out"
+                    authenticateFirebase(); // Re-authenticate anonymously
+                }
+            });
+
+            /**
+             * Authenticates the app with Firebase using the provided token or anonymously.
+             * This now primarily signs in *anonymously* so the app can run before login.
+             */
+            async function authenticateFirebase() {
+                 try {
+                     // We don't have __initial_auth_token, so we always sign in anonymously
+                     // if no user is already signed in.
+                     if (!auth.currentUser) {
+                        await signInAnonymously(auth);
+                        console.log("Signed in anonymously");
+                     }
+                } catch (error) {
+                    console.error('Firebase anonymous auth failed:', error);
+                    showError('Could not connect to the application. Please refresh.');
+                }
+            }
+            
+            /**
+             * Logs a user in with email and password.
+             */
+            async function login(email, password) {
+                try {
+                    // If we are signed in anonymously, sign out first
+                    if (auth.currentUser && auth.currentUser.isAnonymous) {
+                        await signOut(auth);
+                    }
+                    // Sign in with email and password
+                    await signInWithEmailAndPassword(auth, email, password);
+                    // onAuthStateChanged will handle the rest
+                    showToast("Logged in successfully!");
+                } catch (error) {
+                    console.error("Login Error:", error.code, error.message);
+                    showError(getFriendlyAuthError(error));
+                    // If login fails, sign back in anonymously so app doesn't break
+                    await authenticateFirebase();
+                }
+            }
+
+            /**
+             * Logs the current user out.
+             */
+            async function logout(e) {
+                if(e) e.preventDefault();
+                try {
+                    await signOut(auth);
+                    // onAuthStateChanged will handle the rest
+                    showToast("Logged out.");
+                } catch (error) {
+                    console.error("Logout Error:", error);
+                    showError("Error logging out. Please try again.");
+                }
+            }
+
+            /**
+             * Registers a new user with email/password and creates their Firestore document.
+             */
+            async function handleRegistration(e) {
+                e.preventDefault();
+                const name = document.getElementById('reg-name').value;
+                const email = document.getElementById('reg-email').value;
+                const password = document.getElementById('reg-password').value;
+                const passwordConfirm = document.getElementById('reg-password-confirm').value;
+
+                if (password !== passwordConfirm) {
+                    showError('Passwords do not match. Please try again.');
+                    return;
+                }
+                if (password.length < 8) {
+                    showError('Password must be at least 8 characters long.');
+                    return;
+                }
+
+                try {
+                    // 1. Create the user in Firebase Auth
+                    // We must be signed out of anonymous auth to do this
+                    if (auth.currentUser && auth.currentUser.isAnonymous) {
+                        await signOut(auth);
+                    }
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                    const user = userCredential.user;
+
+                    // 2. Create the user document in Firestore
+                    const newUser = {
+                        uid: user.uid,
+                        name: name,
+                        email: email,
+                        profileImage: null,
+                        friends: [], // UIDs of accepted friends
+                        pendingRequests: [], // UIDs of users who sent me a request
+                        sentRequests: [] // UIDs of users I have sent a request to
+                    };
+
+                    const userDocRef = doc(db, usersCollectionPath, user.uid);
+                    await setDoc(userDocRef, newUser);
+
+                    // 3. Show success and navigate
+                    document.getElementById('confirmation-message').textContent = `Thank you for registering, ${name}! Please log in.`;
+                    navigateTo('#confirmation');
+                    
+                    // Auto-redirect to login
+                    setTimeout(() => {
+                        if (window.location.hash === '#confirmation') {
+                            navigateTo('#login');
+                        }
+                    }, 3000);
+                    e.target.reset();
+
+                } catch (error) {
+                    console.error("Registration Error:", error.code, error.message);
+                    showError(getFriendlyAuthError(error));
+                } finally {
+                    // Ensure we are signed in again (anonymously) if registration fails
+                    // or after it succeeds and user is on confirmation page.
+                    if (!auth.currentUser) {
+                        await authenticateFirebase();
+                    }
+                }
+            }
+
+            /**
+             * Displays the current user's profile data from the global state.
+             */
+            function displayProfile() {
+                if (!currentDbUser) {
+                    // This can happen if navigateTo('#profile') is called before onSnapshot runs
+                    console.warn("displayProfile called before currentDbUser is set.");
+                    return; 
+                }
+                
+                document.getElementById('profile-name').textContent = currentDbUser.name;
+                document.getElementById('profile-email').textContent = currentDbUser.email;
+                document.getElementById('profile-uid').textContent = currentUserId; // Use UID from auth
+
+                const placeholder = `https://placehold.co/128x128/E0E7FF/4338CA?text=${encodeURIComponent(currentDbUser.name.charAt(0).toUpperCase())}`;
+                document.getElementById('profile-image-display').src = currentDbUser.profileImage || placeholder;
+            }
+
+            /**
+             * Handles uploading a new profile image, converting to Base64, and saving to Firestore.
+             */
+            async function handleProfileImageUpload(e) {
+                e.preventDefault();
+                if (!currentUserId) {
+                    showError("You must be logged in to do that.");
+                    return;
+                }
+
+                const imageInput = document.getElementById('profile-image-input');
+                const file = imageInput.files[0];
+
+                if (!file) {
+                    showError("Please select an image file first.");
+                    return;
+                }
+                
+                if (file.size > 1024 * 1024) { // 1MB limit
+                    showError("Image is too large. Please upload a file under 1MB.");
+                    return;
+                }
+
+                let imageBase64 = null;
+                try {
+                    imageBase64 = await readImageAsBase64(file);
+                } catch (error) {
+                    showError("Could not read image file. Please try again.");
+                    return;
+                }
+
+                try {
+                    // Update the user's document in Firestore
+                    const userDocRef = doc(db, usersCollectionPath, currentUserId);
+                    await updateDoc(userDocRef, {
+                        profileImage: imageBase64
+                    });
+                    
+                    // The onSnapshot listener will automatically update currentDbUser
+                    // and call displayProfile(), so no need to do it manually.
+                    
+                    e.target.reset(); // Clear the file input
+                    showToast("Profile picture saved!");
+                } catch (error) {
+                    console.error("Error saving profile image:", error);
+                    showError("Could not save profile picture. Please try again.");
+                }
+            }
+
+            // --- FRIEND LOGIC (REFACTORED FOR FIREBASE) ---
+
+            /**
+             * Finds a user document in Firestore by their email address.
+             * Returns the user data object and its document ID.
+             */
+            async function findUserByEmail(email) {
+                const q = query(collection(db, usersCollectionPath), where("email", "==", email));
+                try {
+                    const querySnapshot = await getDocs(q);
+                    if (querySnapshot.empty) {
+                        return null; // User not found
+                    }
+                    // Return the document data and its ID (which is the user's UID)
+                    const userDoc = querySnapshot.docs[0];
+                    return { id: userDoc.id, ...userDoc.data() };
+                } catch (error) {
+                    console.error("Error finding user by email:", error);
+                    return null;
+                }
+            }
+
+            /**
+             * Finds a user document in Firestore by their UID.
+             * Returns the user data object.
+             */
+            async function findUserByUID(uid) {
+                try {
+                    const userDocRef = doc(db, usersCollectionPath, uid);
+                    const docSnap = await getDoc(userDocRef);
+                    if (docSnap.exists()) {
+                         return { id: docSnap.id, ...docSnap.data() };
+                    } else {
+                        return null; // User not found
+                    }
+                } catch (error) {
+                    console.error("Error finding user by UID:", error);
+                    return null;
+                }
+            }
+            
+            /**
+             * Fetches all user documents from Firestore. (For Admin)
+             */
+            async function getAllUsers() {
+                 const users = [];
+                 try {
+                    const querySnapshot = await getDocs(collection(db, usersCollectionPath));
+                    querySnapshot.forEach((doc) => {
+                        users.push({ id: doc.id, ...doc.data() });
+                    });
+                    return users;
+                 } catch(error) {
+                    console.error("Error getting all users:", error);
+                    showError("Could not fetch user list.");
+                    return [];
+                 }
+            }
+
+            /**
+             * Handles sending a friend request.
+             */
+            async function handleSendFriendRequest(e) {
+                e.preventDefault();
+                if (!currentDbUser || !currentUserId) {
+                    showError("You must be logged in to send requests.");
+                    return;
+                }
+
+                const targetEmailInput = document.getElementById('find-email');
+                const targetEmail = targetEmailInput.value.trim().toLowerCase();
+
+                if (targetEmail === currentDbUser.email) {
+                    showError("You cannot send a friend request to yourself.");
+                    return;
+                }
+
+                const targetUser = await findUserByEmail(targetEmail);
+
+                if (!targetUser) {
+                    showError("User not found with that email address.");
+                    return;
+                }
+
+                // Check statuses using the local currentDbUser object
+                // We now check against UIDs
+                if (currentDbUser.friends.includes(targetUser.id)) {
+                    showError("You are already friends with this user.");
+                    return;
+                }
+                if (currentDbUser.sentRequests.includes(targetUser.id)) {
+                    showError("You have already sent a request to this user.");
+                    return;
+                }
+                if (currentDbUser.pendingRequests.includes(targetUser.id)) {
+                    showError("This user has already sent you a friend request. Check your requests below.");
+                    return;
+                }
+
+                try {
+                    // Update documents in Firestore
+                    const targetUserDocRef = doc(db, usersCollectionPath, targetUser.id);
+                    const currentUserDocRef = doc(db, usersCollectionPath, currentUserId);
+                    
+                    // Add current user's UID to target's pending requests
+                    await updateDoc(targetUserDocRef, {
+                        pendingRequests: arrayUnion(currentUserId)
+                    });
+                    
+                    // Add target's UID to current user's sent requests
+                    await updateDoc(currentUserDocRef, {
+                        sentRequests: arrayUnion(targetUser.id)
+                    });
+                    
+                    // onSnapshot will update currentDbUser, but we show toast immediately
+                    showToast(`Friend request sent to ${targetUser.name}!`);
+                    targetEmailInput.value = ''; // Clear input
+
+                } catch(error) {
+                    console.error("Error sending friend request:", error);
+                    showError("Could not send friend request. Please try again.");
+                }
+            }
+
+            /**
+             * Handles accepting a friend request.
+             */
+            async function handleAcceptRequest(senderUID) {
+                if (!currentDbUser || !currentUserId) return;
+                
+                try {
+                    const currentUserDocRef = doc(db, usersCollectionPath, currentUserId);
+                    const senderUserDocRef = doc(db, usersCollectionPath, senderUID);
+                    
+                    // 1. Update current user: remove sender's UID from pending, add to friends
+                    await updateDoc(currentUserDocRef, {
+                        pendingRequests: arrayRemove(senderUID),
+                        friends: arrayUnion(senderUID)
+                    });
+                    
+                    // 2. Update sender: remove current user's UID from sent, add to friends
+                    await updateDoc(senderUserDocRef, {
+                        sentRequests: arrayRemove(currentUserId),
+                        friends: arrayUnion(currentUserId)
+                    });
+                    
+                    // onSnapshot will handle the UI refresh
+                    showToast("Friend request accepted!");
+                    
+                } catch(error) {
+                    console.error("Error accepting request:", error);
+                    showError("Could not accept request. Please try again.");
+                }
+            }
+
+            /**
+             * Handles declining a friend request.
+             */
+            async function handleDeclineRequest(senderUID) {
+                if (!currentDbUser || !currentUserId) return;
+                
+                try {
+                    const currentUserDocRef = doc(db, usersCollectionPath, currentUserId);
+                    const senderUserDocRef = doc(db, usersCollectionPath, senderUID);
+
+                    // 1. Remove from current user's pending requests
+                    await updateDoc(currentUserDocRef, {
+                        pendingRequests: arrayRemove(senderUID)
+                    });
+                    
+                    // 2. Remove from sender's sent requests
+                    await updateDoc(senderUserDocRef, {
+                        sentRequests: arrayRemove(currentUserId)
+                    });
+                    
+                    // onSnapshot will handle the UI refresh
+                    showToast("Friend request declined.");
+
+                } catch (error) {
+                    console.error("Error declining request:", error);
+                    showError("Could not decline request. Please try again.");
+                }
+            }
+
+             /**
+              * Handles removing an existing friend.
+              */
+             function handleRemoveFriend(friendUID) {
+                if (!currentDbUser) return;
+                
+                const friendName = document.querySelector(`.remove-friend-btn[data-uid="${friendUID}"]`)
+                                      ?.closest('.flex.items-center.justify-between')
+                                      ?.querySelector('p.font-semibold')
+                                      ?.textContent || 'this friend';
+
+                showConfirmation(`Are you sure you want to remove ${friendName}?`, async () => {
+                    try {
+                        const currentUserDocRef = doc(db, usersCollectionPath, currentUserId);
+                        const friendUserDocRef = doc(db, usersCollectionPath, friendUID);
+                        
+                        // Remove friend from current user's list
+                        await updateDoc(currentUserDocRef, {
+                            friends: arrayRemove(friendUID)
+                        });
+                        
+                        // Remove current user from friend's list
+                        await updateDoc(friendUserDocRef, {
+                            friends: arrayRemove(currentUserId)
+                        });
+                        
+                        // onSnapshot will handle the UI refresh
+                        showToast("Friend removed.");
+                        
+                    } catch(error) {
+                        console.error("Error removing friend:", error);
+                        showError("Could not remove friend. Please try again.");
+                    }
+                });
+            }
+
+            /**
+             * Main function to display all content on the friends page.
+             * This is now ASYNC because it fetches user data for requests/friends.
+             */
+            async function displayFriendsPageContent() {
+                if (!currentDbUser) return;
+
+                // These functions are now async and will fetch details
+                await displayPendingRequests(currentDbUser);
+                await displayAcceptedFriends(currentDbUser);
+                
+                // Re-add listeners *after* HTML is rendered
+                addDynamicButtonListeners();
+            }
+
+            /**
+             * Displays pending friend requests, fetching sender details.
+             */
+            async function displayPendingRequests(currentUser) {
+                const requestsContainer = document.getElementById('friend-requests-container');
+                if (!requestsContainer) return;
+                
+                if (currentUser.pendingRequests.length === 0) {
+                    requestsContainer.innerHTML = '<p class="text-gray-500">You have no pending friend requests.</p>';
+                    return;
+                }
+                
+                // Show loading state while fetching
+                requestsContainer.innerHTML = '<p class="text-gray-500">Loading requests...</p>';
+                
+                // Fetch all sender profiles in parallel
+                const senderPromises = currentUser.pendingRequests.map(uid => findUserByUID(uid));
+                const senders = await Promise.all(senderPromises);
+
+                requestsContainer.innerHTML = ''; // Clear loading state
+
+                senders.forEach(sender => {
+                    if (!sender) return; // Skip if sender somehow doesn't exist
+
+                    const requestCard = document.createElement('div');
+                    requestCard.className = 'bg-yellow-50 p-4 rounded-lg shadow-sm border border-yellow-200 flex items-center justify-between';
+                    const placeholderImg = `https://placehold.co/60x60/FEF3C7/F59E0B?text=${encodeURIComponent(sender.name.charAt(0).toUpperCase())}`;
+
+                    requestCard.innerHTML = `
+                        <div class="flex items-center min-w-0">
+                            <img src="${sender.profileImage || placeholderImg}" alt="${sender.name}" class="w-12 h-12 rounded-full mr-4 object-cover flex-shrink-0">
+                            <div class="min-w-0">
+                                <p class="font-semibold text-lg text-gray-800 truncate">${sender.name}</p>
+                                <p class="text-sm text-gray-600 truncate">${sender.email}</p>
+                            </div>
+                        </div>
+                        <div class="flex space-x-2 flex-shrink-0 ml-4">
+                            <button class="accept-request-btn text-xs bg-green-100 text-green-700 hover:bg-green-200 font-medium py-1 px-3 rounded-full" data-sender-uid="${sender.id}">
+                                Accept
+                            </button>
+                            <button class="decline-request-btn text-xs bg-red-100 text-red-700 hover:bg-red-200 font-medium py-1 px-3 rounded-full" data-sender-uid="${sender.id}">
+                                Decline
+                            </button>
+                        </div>
+                    `;
+                    requestsContainer.appendChild(requestCard);
+                });
+            }
+
+            /**
+             * Displays accepted friends, fetching friend details and filtering by search.
+             */
+            async function displayAcceptedFriends(currentUser) {
+                const friendListContainer = document.getElementById('friend-list-container');
+                if(!friendListContainer) return;
+                
+                const searchInput = document.getElementById('friend-search');
+                const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+
+                const acceptedFriendUIDs = currentUser.friends;
+
+                if (acceptedFriendUIDs.length === 0) {
+                    friendListContainer.innerHTML = '<p class="text-gray-500">You haven\'t added any friends yet. Find users above!</p>';
+                    return;
+                }
+                
+                // Show loading state
+                friendListContainer.innerHTML = '<p class="text-gray-500">Loading friends...</p>';
+                
+                // Fetch all friend profiles in parallel
+                const friendPromises = acceptedFriendUIDs.map(uid => findUserByUID(uid));
+                const friends = (await Promise.all(friendPromises)).filter(Boolean); // Filter out any nulls
+
+                friendListContainer.innerHTML = ''; // Clear loading
+
+                const friendsToDisplay = friends
+                    .filter(friend => friend.name.toLowerCase().includes(searchTerm) || friend.email.toLowerCase().includes(searchTerm));
+
+                if (friendsToDisplay.length === 0 && searchTerm) {
+                    friendListContainer.innerHTML = '<p class="text-gray-500">No friends match your search.</p>';
+                    return;
+                } else if (friendsToDisplay.length === 0) {
+                    friendListContainer.innerHTML = '<p class="text-gray-500">No friends to display.</p>';
+                    return;
+                }
+
+                friendsToDisplay.forEach(friend => {
+                    const friendCard = document.createElement('div');
+                    friendCard.className = 'bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200 flex items-center justify-between hover:shadow-md transition-shadow duration-200';
+                    const placeholderImg = `https://placehold.co/60x60/E0E7FF/4338CA?text=${encodeURIComponent(friend.name.charAt(0).toUpperCase())}`;
+
+                    friendCard.innerHTML = `
+                        <div class="flex items-center min-w-0">
+                            <img src="${friend.profileImage || placeholderImg}" alt="${friend.name}" class="w-12 h-12 rounded-full mr-4 object-cover flex-shrink-0">
+                            <div class="min-w-0">
+                                <p class="font-semibold text-lg text-gray-800 truncate">${friend.name}</p>
+                                <p class="text-sm text-gray-600 truncate">${friend.email}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-3 flex-shrink-0 ml-4">
+                            <button class="draft-greeting-btn text-gray-400 hover:text-indigo-600 p-1 rounded-full" title="Draft Greeting" data-name="${friend.name}">
+                                <span class="sr-only">Draft Greeting</span>
+                                <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M19.5 12c0 4.628-4.155 8.36-9.25 8.36S1 16.628 1 12 5.155 3.64 10.25 3.64 19.5 7.372 19.5 12z" />
+                                </svg>
+                            </button>
+                            <button class="remove-friend-btn text-gray-400 hover:text-red-600 p-1 rounded-full" title="Remove Friend" data-uid="${friend.id}">
+                                <span class="sr-only">Remove Friend</span>
+                                <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12.56 0c.342.052.682.107 1.022.166m0 0L9.26 5.79m0 0l3.001-3.002A2.25 2.25 0 0115 5.79v.035" />
+                                </svg>
+                            </button>
+                        </div>
+                    `;
+                    friendListContainer.appendChild(friendCard);
+                });
+            }
+
+            // --- ADMIN FUNCTION ---
+            /**
+             * Fetches and displays all users for the admin dashboard.
+             */
+            async function displayAdminDashboard() {
+                const container = document.getElementById('admin-user-list-container');
+                if (!container) return;
+                
+                container.innerHTML = '<p class="text-gray-500">Loading all users...</p>';
+                
+                const users = await getAllUsers();
+                
+                container.innerHTML = ''; // Clear loading
+                
+                if (users.length === 0) {
+                     container.innerHTML = '<p class="text-gray-500">No users found.</p>';
+                     return;
+                }
+
+                users.forEach(user => {
+                    const userCard = document.createElement('div');
+                    userCard.className = 'bg-gray-100 p-4 rounded-lg shadow-sm';
+                    const placeholderImg = `https://placehold.co/48x48/E0E7FF/4338CA?text=${encodeURIComponent(user.name.charAt(0).toUpperCase())}`;
+                    
+                    userCard.innerHTML = `
+                        <div class="flex items-center">
+                            <img src="${user.profileImage || placeholderImg}" alt="${user.name}" class="w-12 h-12 rounded-full mr-4 object-cover">
+                            <div>
+                                <p class="font-semibold text-gray-900">${user.name} ${user.email === adminEmail ? '<span class="text-xs bg-indigo-100 text-indigo-700 font-bold py-0.5 px-2 rounded-full ml-2">ADMIN</span>' : ''}</p>
+                                <p class="text-sm text-gray-600">${user.email}</p>
+                                <p class="text-xs text-gray-500 font-mono mt-1">${user.uid}</p>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(userCard);
+                });
+            }
+            
+            // --- NAVIGATION & UI FUNCTIONS ---
+            
+            /**
+             * Updates the navigation bar based on the user's login and admin status.
+             */
+            function updateNav() {
+                const body = document.body;
+                // User is considered "logged in" if they are not anonymous
+                const isLoggedIn = !!currentAuthUser && !currentAuthUser.isAnonymous;
+                const isAdmin = isLoggedIn && currentDbUser && currentDbUser.email === adminEmail;
+                
+                if (isLoggedIn) {
+                    body.classList.remove('logged-out-nav');
+                    body.classList.add('logged-in-nav');
+                    
+                    const welcomeMsg = document.getElementById('home-welcome-message');
+                    if (welcomeMsg && currentDbUser) {
+                        welcomeMsg.textContent = `Welcome back, ${currentDbUser.name}! Connect with your friends or find new ones.`;
+                    }
+                } else {
+                    body.classList.remove('logged-in-nav');
+                    body.classList.add('logged-out-nav');
+                    
+                    const welcomeMsg = document.getElementById('home-welcome-message');
+                    if (welcomeMsg) {
+                        welcomeMsg.textContent = `This is your new capstone project, built as a professional single-page application. Login or Register to connect with your friends!`;
+                    }
+                }
+                
+                if (isAdmin) {
+                    body.classList.add('admin-nav');
+                } else {
+                    body.classList.remove('admin-nav');
+                }
+            }
+
+            /**
+             * Main navigation function. Shows/hides pages and triggers page-specific logic.
+             */
+            async function navigateTo(hash) {
+                if (!hash || hash === '#') hash = '#home';
+
+                const isLoggedIn = !!currentAuthUser && !currentAuthUser.isAnonymous;
+                const isAdmin = isLoggedIn && currentDbUser && currentDbUser.email === adminEmail;
+                const targetPageName = hash.substring(1);
+                
+                // Page Protection
+                if ((targetPageName === 'friends' || targetPageName === 'profile') && !isLoggedIn) {
+                    navigateTo('#login'); return;
+                }
+                if ((targetPageName === 'login' || targetPageName === 'register') && isLoggedIn) {
+                    navigateTo('#home'); return;
+                }
+                if (targetPageName === 'admin' && !isAdmin) {
+                    navigateTo('#home'); return;
+                }
+                
+                // Standard Navigation
+                const pageSections = document.querySelectorAll('.page-section');
+                const targetPageId = 'page-' + targetPageName;
+                pageSections.forEach(page => page.classList.remove('active'));
+                
+                const targetPageElement = document.getElementById(targetPageId);
+                if (targetPageElement) {
+                    targetPageElement.classList.add('active');
+                } else {
+                    document.getElementById('page-home').classList.add('active');
+                    hash = '#home'; // correct hash if fallback
+                }
+
+                // Update nav link active states
+                document.querySelectorAll('.nav-link, .nav-link-mobile').forEach(link => {
+                    if (link.getAttribute('href') === hash) {
+                        link.classList.add('border-indigo-500', 'text-gray-900');
+                        link.classList.remove('border-transparent', 'text-gray-500');
+                    } else {
+                        link.classList.add('border-transparent', 'text-gray-500');
+                        link.classList.remove('border-indigo-500', 'text-gray-900');
+                    }
+                });
+
+                document.getElementById('mobile-menu').classList.add('hidden');
+
+                // --- Run page-specific logic AFTER showing the page ---
+                try {
+                    if (hash === '#friends' && isLoggedIn) { // Only load if logged in
+                        await displayFriendsPageContent(); // This is now async
+                    }
+                    if (hash === '#profile' && isLoggedIn) {
+                        displayProfile(); // This is sync, uses global state
+                    }
+                    if (hash === '#admin' && isAdmin) { // Only load if admin
+                        await displayAdminDashboard(); // This is now async
+                    }
+                } catch(error) {
+                    console.error("Error loading page content:", error);
+                    showError("Could not load page content. Please try again.");
+                }
+            }
+
+            /**
+             * Shows a success toast notification.
+             */
+            function showToast(message) {
+                 const toastContainer = document.getElementById('toast-container');
+                 if (!toastContainer) return;
+
+                 const toast = document.createElement('div');
+                 toast.className = 'bg-green-600 text-white p-4 rounded-lg shadow-lg transform transition-all duration-300 ease-out translate-y-4 opacity-0 mb-2'; 
+                 
+                 toast.innerHTML = `
+                     <div class="flex items-center space-x-3">
+                         <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                         </svg>
+                         <span class="font-medium">${message}</span>
+                     </div>
+                 `;
+                 
+                 toastContainer.prepend(toast); 
+
+                 setTimeout(() => {
+                     toast.classList.remove('translate-y-4', 'opacity-0');
+                     toast.classList.add('translate-y-0', 'opacity-100');
+                 }, 10);
+
+                 setTimeout(() => {
+                     toast.classList.add('translate-y-4', 'opacity-0');
+                     toast.addEventListener('transitionend', () => {
+                         toast.remove();
+                     }, { once: true });
+                 }, 3000);
+            }
+
+            /**
+             * Sets up the friend search input listener.
+             */
+            function setupSearch() {
+                const searchInput = document.getElementById('friend-search');
+                if (searchInput) {
+                    // Re-filter the displayed friends list on input
+                    searchInput.addEventListener('input', () => {
+                        // Only refresh if we are logged in and on the friends page
+                         if(currentDbUser && document.getElementById('page-friends').classList.contains('active')) {
+                             displayAcceptedFriends(currentDbUser);
+                         }
+                    });
+                }
+            }
+
+            /**
+             * Shows the error modal with a specific message.
+             */
+            function showError(message) {
+                const errorModal = document.getElementById('error-modal');
+                if (!errorModal) {
+                    console.error("FALLBACK ERROR:", message);
+                    return;
+                }
+                document.getElementById('error-message').textContent = message;
+                errorModal.classList.remove('hidden');
+            }
+
+            /**
+             * Shows a confirmation modal and executes a callback on 'Yes'.
+             */
+            function showConfirmation(message, onConfirm) {
+                const confirmModal = document.getElementById('confirm-modal');
+                document.getElementById('confirm-message').textContent = message;
+                
+                const yesButton = document.getElementById('confirm-btn-yes');
+                const noButton = document.getElementById('confirm-btn-no');
+
+                // Clone buttons to remove old listeners
+                const newYesButton = yesButton.cloneNode(true);
+                yesButton.parentNode.replaceChild(newYesButton, yesButton);
+                
+                const newNoButton = noButton.cloneNode(true);
+                noButton.parentNode.replaceChild(newNoButton, noButton);
+
+                // Add new listeners
+                newYesButton.addEventListener('click', () => {
+                    confirmModal.classList.add('hidden');
+                    onConfirm(); // Execute the callback
+                });
+                newNoButton.addEventListener('click', () => {
+                    confirmModal.classList.add('hidden');
+                });
+                
+                confirmModal.classList.remove('hidden');
+            }
+            
+            /**
+             * Adds event listeners to dynamically created buttons (friends, requests).
+             * This must be called *after* the content is rendered.
+             */
+            function addDynamicButtonListeners() {
+                // Remove Friend Buttons
+                document.querySelectorAll('.remove-friend-btn').forEach(button => {
+                     const newButton = button.cloneNode(true);
+                       button.parentNode.replaceChild(newButton, button);
+                     newButton.addEventListener('click', (e) => {
+                        const friendUID = e.currentTarget.getAttribute('data-uid');
+                        handleRemoveFriend(friendUID);
+                     });
+                });
+                
+                // Draft Greeting Buttons
+                document.querySelectorAll('.draft-greeting-btn').forEach(button => {
+                     const newButton = button.cloneNode(true);
+                       button.parentNode.replaceChild(newButton, button);
+                     newButton.addEventListener('click', (e) => {
+                        const friendName = e.currentTarget.getAttribute('data-name');
+                        handleDraftGreeting(friendName);
+                     });
+                });
+                
+                 // Accept Request Buttons
+                 document.querySelectorAll('.accept-request-btn').forEach(button => {
+                    const newButton = button.cloneNode(true);
+                    button.parentNode.replaceChild(newButton, button);
+                    newButton.addEventListener('click', (e) => {
+                        const senderUID = e.currentTarget.getAttribute('data-sender-uid');
+                        handleAcceptRequest(senderUID);
+                    });
+                });
+                
+                 // Decline Request Buttons
+                 document.querySelectorAll('.decline-request-btn').forEach(button => {
+                     const newButton = button.cloneNode(true);
+                       button.parentNode.replaceChild(newButton, button);
+                     newButton.addEventListener('click', (e) => {
+                        const senderUID = e.currentTarget.getAttribute('data-sender-uid');
+                        handleDeclineRequest(senderUID);
+                    });
+                });
+            }
+
+            /**
+             * Calls the Gemini API to draft a greeting.
+             */
+            async function handleDraftGreeting(friendName) {
+                if (!friendName) return;
+                const prompt = `Write a short, casual, one-line greeting to my friend ${friendName} to check in with them. Make it sound natural and friendly.`;
+                await callGemini(prompt, `Draft Greeting for ${friendName}`);
+            }
+
+            /**
+             * Calls the Gemini API for friendship tips.
+             */
+            async function handleGetFriendshipTip() {
+                const tipBox = document.getElementById('ai-tip-box');
+                const tipContent = document.getElementById('ai-tip-content');
+                
+                // MODIFIED: Show loading state and animation
+                tipContent.innerHTML = `
+                    <div class="flex items-center text-sm text-purple-500">
+                        <svg class="animate-spin h-4 w-4 text-purple-400 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Generating a new tip...
+                    </div>
+                `;
+                tipBox.classList.add('show'); // This triggers the new CSS animation
+
+                const prompt = "Give me one short, insightful friendship tip. Make it actionable and positive. Start the tip directly, without any intro like 'Here's a tip:'";
+                
+                if (!apiKey || apiKey === "PASTE YOUR GEMINI API KEY HERE") {
+                    showError("Gemini API key is not set. Cannot get friendship tip.");
+                    tipContent.textContent = "Could not generate tip: API key is missing.";
+                    return;
+                }
+                
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: prompt }] }],
+                            systemInstruction: {
+                                parts: [{ text: "You are a friendly and wise advisor." }]
+                            },
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        console.error("Gemini API Error Response:", errorData);
+                        throw new Error(errorData.error.message || `API request failed with status ${response.status}`);
+                    }
+                    const result = await response.json();
+                    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                    
+                    if (text) {
+                        // MODIFIED: Set text content
+                        tipContent.textContent = text.trim();
+                    } else {
+                        throw new Error("Invalid API response structure.");
+                    }
+
+                } catch (error) {
+                    console.error('Gemini API Error:', error);
+                    // MODIFIED: Set text content on error
+                    tipContent.textContent = "Sorry, I couldn't think of a tip right now.";
+                    showError("Gemini API Error: " + error.message);
+                }
+            }
+
+            /**
+             * Generic function to call Gemini and display in the modal.
+             */
+            async function callGemini(prompt, title) {
+                const modal = document.getElementById('gemini-modal');
+                const loadingDiv = document.getElementById('gemini-loading');
+                const contentDiv = document.getElementById('gemini-modal-content');
+                const outputP = document.getElementById('gemini-text-output');
+                
+                document.getElementById('gemini-modal-title').textContent = title;
+                loadingDiv.style.display = 'flex';
+                contentDiv.style.display = 'none';
+                outputP.textContent = '';
+                modal.classList.remove('hidden');
+                
+                if (!apiKey || apiKey === "PASTE YOUR GEMINI API KEY HERE") {
+                    showError("Gemini API key is not set. Cannot call Gemini API.");
+                    modal.classList.add('hidden');
+                    return;
+                }
+                
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: prompt }] }],
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        console.error("Gemini API Error Response:", errorData);
+                        throw new Error(errorData.error.message || `API request failed with status ${response.status}`);
+                    }
+                    const result = await response.json();
+                    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                    if (text) {
+                        outputP.textContent = text.trim();
+                    } else {
+                        throw new Error("Invalid API response structure.");
+                    }
+
+                } catch (error) {
+                    console.error('Gemini API Error:', error);
+                    outputP.textContent = "Sorry, an error occurred while generating the response.";
+                    showError("Gemini API Error: " + error.message);
+                } finally {
+                    loadingDiv.style.display = 'none';
+                    contentDiv.style.display = 'block';
+                }
+            }
+
+            /**
+             * Converts Firebase Auth error codes into friendly messages.
+             */
+            function getFriendlyAuthError(error) {
+                switch (error.code) {
+                    case 'auth/invalid-email':
+                        return 'Please enter a valid email address.';
+                    case 'auth/user-not-found':
+                    case 'auth/wrong-password':
+                    case 'auth/invalid-credential':
+                        return 'Invalid email or password. Please try again.';
+                    case 'auth/email-already-in-use':
+                        return 'An account with this email address already exists.';
+                    case 'auth/weak-password':
+                        return 'Your password is too weak. Please choose a stronger one.';
+                    default:
+                        console.error("Unhandled Auth Error:", error);
+                        return 'An unexpected error occurred. Please try again.';
+                }
+            }
+            
+
+            // --- GLOBAL EVENT LISTENERS ---
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+
+            // Navigation links
+            document.querySelectorAll('.nav-link, .nav-link-mobile').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    const hash = new URL(e.currentTarget.href).hash;
+                    if (hash) {
+                        e.preventDefault();
+                        window.location.hash = hash; // This will trigger the 'hashchange' listener
+                    }
+                });
+            });
+            
+            // Listen for hash changes to navigate
+            window.addEventListener('hashchange', () => navigateTo(window.location.hash));
+
+            // Logout buttons
+            document.getElementById('logout-link').addEventListener('click', logout);
+            document.getElementById('logout-link-mobile').addEventListener('click', logout);
+            document.getElementById('logout-button-profile').addEventListener('click', logout);
+            
+            // Mobile menu toggle
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+            
+            // Modal close buttons
+            document.getElementById('close-error-modal').addEventListener('click', () => {
+                document.getElementById('error-modal').classList.add('hidden');
+            });
+            document.getElementById('close-gemini-modal').addEventListener('click', () => {
+                document.getElementById('gemini-modal').classList.add('hidden');
+            });
+            document.getElementById('close-gemini-modal-bottom').addEventListener('click', () => {
+                document.getElementById('gemini-modal').classList.add('hidden');
+            });
+            
+            // Copy Gemini text
+            document.getElementById('copy-gemini-text').addEventListener('click', () => {
+                const textToCopy = document.getElementById('gemini-text-output').textContent;
+                // Use execCommand as a fallback for iframe environments
+                try {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = textToCopy;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    showToast("Text copied to clipboard!");
+                } catch (err) {
+                    console.error('Failed to copy text: ', err);
+                    showError("Could not copy text.");
+                }
+            });
+
+            // Form Submissions
+            document.getElementById('registration-form').addEventListener('submit', handleRegistration);
+            document.getElementById('login-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const email = document.getElementById('login-email').value;
+                const password = document.getElementById('login-password').value;
+                login(email, password);
+            });
+            document.getElementById('find-friend-form').addEventListener('submit', handleSendFriendRequest);
+            document.getElementById('profile-image-form').addEventListener('submit', handleProfileImageUpload);
+            
+            // Other Buttons
+            document.getElementById('get-tip-btn').addEventListener('click', handleGetFriendshipTip);
+            
+            // --- APP INITIALIZATION ---
+            
+            setupSearch(); // Setup search input listener
+            
+            // Start the Firebase authentication process
+            // This will sign in anonymously, and then onAuthStateChanged
+            // will update the nav and navigate to the home page.
+            authenticateFirebase();
+
+        }); // end DOMContentLoaded
+    </script>
+</body>
+</html>
+
